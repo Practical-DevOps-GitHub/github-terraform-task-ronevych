@@ -9,32 +9,28 @@ terraform {
 
 provider "github" {
   token = var.github_token
-}
-
-resource "github_repository" "repo" {
-  name        = "terraform-lab-github"
-  visibility  = "public"
-  auto_init   = true # Створює початковий коміт і гілку main
+  owner = "Practical-DevOps-GitHub"
 }
 
 resource "github_repository_collaborator" "collab" {
-  repository = github_repository.repo.name
+  repository = "github-terraform-task-ronevych"
   username   = "softservedata"
   permission = "push"
 }
 
 resource "github_branch" "develop" {
-  repository = github_repository.repo.name
-  branch     = "develop"
+  repository    = "github-terraform-task-ronevych"
+  branch        = "develop"
+  source_branch = "main"
 }
 
 resource "github_branch_default" "default" {
-  repository = github_repository.repo.name
+  repository = "github-terraform-task-ronevych"
   branch     = github_branch.develop.branch
 }
 
 resource "github_repository_file" "pr_template" {
-  repository          = github_repository.repo.name
+  repository          = "github-terraform-task-ronevych"
   branch              = "main"
   file                = ".github/pull_request_template.md"
   depends_on          = [github_branch.develop]
@@ -51,7 +47,7 @@ EOT
 }
 
 resource "github_repository_file" "codeowners" {
-  repository          = github_repository.repo.name
+  repository          = "github-terraform-task-ronevych"
   branch              = "main"
   file                = ".github/CODEOWNERS"
   content             = "* @softservedata"
@@ -60,7 +56,7 @@ resource "github_repository_file" "codeowners" {
 }
 
 resource "github_branch_protection" "develop_protection" {
-  repository_id = github_repository.repo.node_id
+  repository_id = "github-terraform-task-ronevych"
   pattern       = "develop"
 
   required_pull_request_reviews {
@@ -69,29 +65,34 @@ resource "github_branch_protection" "develop_protection" {
 }
 
 resource "github_branch_protection" "main_protection" {
-  repository_id = github_repository.repo.node_id
+  repository_id = "github-terraform-task-ronevych"
   pattern       = "main"
 
   required_pull_request_reviews {
     required_approving_review_count = 0
     require_code_owner_reviews      = true
   }
+
+  depends_on = [
+    github_repository_file.codeowners,
+    github_repository_file.pr_template,
+  ]
 }
 
 resource "github_actions_secret" "pat" {
-  repository      = github_repository.repo.name
+  repository      = "github-terraform-task-ronevych"
   secret_name     = "PAT"
   plaintext_value = var.github_token
 }
 
 resource "github_actions_secret" "terraform_code" {
-  repository      = github_repository.repo.name
+  repository      = "github-terraform-task-ronevych"
   secret_name     = "TERRAFORM"
   plaintext_value = file("main.tf")
 }
 
 resource "github_repository_deploy_key" "deploy_key" {
-  repository = github_repository.repo.name
+  repository = "github-terraform-task-ronevych"
   title      = "DEPLOY_KEY"
   key        = var.deploy_public_key
   read_only  = true
