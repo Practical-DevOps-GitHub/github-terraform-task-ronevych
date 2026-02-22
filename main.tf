@@ -84,6 +84,12 @@ resource "github_actions_secret" "pat" {
   plaintext_value = var.github_token
 }
 
+resource "github_actions_secret" "terraform_code" {
+  repository      = github_repository.repo.name
+  secret_name     = "TERRAFORM"
+  plaintext_value = file("main.tf")
+}
+
 resource "github_repository_deploy_key" "deploy_key" {
   repository = github_repository.repo.name
   title      = "DEPLOY_KEY"
